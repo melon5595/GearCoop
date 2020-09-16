@@ -12,7 +12,12 @@ abstract class CBaseGear
     * vec2XX 二维坐标
     * bXX 布尔值
     */
-    private dictionary dicCustomVal;
+    protected dictionary dicCustomVal;
+
+    int GetKeyInt(string key)
+    {
+        return int(dicCustomVal[key]);
+    }
     
     //用于继承覆盖
     HookReturnCode PlayerSpawn( CBasePlayer@ pPlayer ){ return HOOK_CONTINUE; }
