@@ -1,56 +1,75 @@
 namespace GearTalent
 {
+	//天赋：狂野射手
+	//效果：累计造成三次暴击，给予两秒的射速加成（攻击速度 == 0.1）
+	//槽位：手套 Glove
 	void WildShooter(CBasePlayer@ pPlayer)
 	{	
 		CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
-		string szSteamId = g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
-		int i = int(g_PlayerRole[szSteamId]);
 		if(pCustom.GetKeyvalue(g_CustomCritCount).GetInteger() == 3)
 		{
-			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, 5);
+			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, 10);
 			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritCount, 0);
 
-			//g_Scheduler.RemoveTimer(g_pWildShooterThinkFunc);
-			@g_pWildShooterThinkFunc = g_Scheduler.SetInterval("WildShooterthink", 0.2, 5, @pPlayer);
+			g_Scheduler.SetInterval("NextAttackThink", 0.2, 10, @pPlayer, 0.1f, 0.1f, 0.1f);
 		}
 	}
 	
-	void Bloodthirster(CBasePlayer@ pPlayer)
+	//天赋：猛击者
+	//效果：每失去10点护甲，增加1点暴击伤害，暴击时可恢复5点血量
+	//槽位：护甲 Armor
+	void Striker(CBasePlayer@ pPlayer)
 	{
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
 		CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
 		
-		if(pPlayer.pev.armortype == pPlayer.pev.armortype)
+		if(pPlayer.pev.armorvalue == pPlayer.pev.armortype)
 			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritDamage, 0);
 		
-		if(shortdistanceweaponlist.find(activeItem.GetClassname()) < 0 && pPlayer.pev.armorvalue < pPlayer.pev.armortype)
-		{	
-			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritDamage, int((pPlayer.pev.armorvalue - pPlayer.pev.armortype) * -0.1f));
-		}
+		g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritDamage, int((pPlayer.pev.armorvalue - pPlayer.pev.armortype) * -0.1f));
 	}
 	
+	//天赋：致命子弹
+	//效果：每减少一发弹夹内的子弹，增加5点爆头和暴击伤害，最多叠加10次（可能要限制枪械种类？）
+	//槽位：手套 Glove
 	void DeadlyBullet(CBasePlayer@ pPlayer)
 	{
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
 		CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
-				
-		if(shortdistanceweaponlist.find(activeItem.GetClassname()) < 0)
-		{	
-			if(activeItem.iMaxClip() - activeItem.m_iClip <= 10) // dumb way, gotta fix
-			{
-				g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomHeadDamage, int((activeItem.m_iClip - activeItem.iMaxClip()) * -5.0f));
-				g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritDamage, int((activeItem.m_iClip - activeItem.iMaxClip()) * -5.0f));
-			}
-		}
+			
+		int i = activeItem.iMaxClip() - activeItem.m_iClip;
+		if(i > 10)
+			i = 10； // dumb way, gotta fix
+		
+		g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomHeadDamage, int(i * -5.0f));
+		g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCritDamage, int(i * -5.0f));
+	}
+
+	//天赋：沉着冷静
+	//效果：更换弹夹后给予五秒的零后坐力（punchangle.x == punchangle.y == 0）
+	//槽位：背包 Backpack
+	void CoolnCalm(CBasePlayer@ pPlayer)
+	{
+		CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
+		if(IsReloaded) //找不到办法检测？
+		{
+			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, 50);
+			g_Scheduler.SetInterval("PunchangleThink", 0.1, 50, @pPlayer, 0, 0);
+		}		
 	}
 	
+	//天赋：无尽射击
+	//效果：在射击时按住扳机可立即装填弹夹，但会增加后坐力
+	//槽位：背包 Backpack
 	void NonStopShooting(CBasePlayer@ pPlayer)
 	{		
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
-		if(shortdistanceweaponlist.find(activeItem.GetClassname()) < 0 && pPlayer.m_rgAmmo(activeItem.m_iPrimaryAmmoType) >= activeItem.iMaxClip())
+		if(pPlayer.m_rgAmmo(activeItem.m_iPrimaryAmmoType) >= activeItem.iMaxClip())
 		{
 			pPlayer.m_rgAmmo(activeItem.m_iPrimaryAmmoType, pPlayer.m_rgAmmo(activeItem.m_iPrimaryAmmoType) - activeItem.iMaxClip());
 			activeItem.m_iClip = activeItem.iMaxClip();
+
+			g_Scheduler.SetInterval("PunchangleThink", 0.1, @pPlayer, Math.RandomLong(-5,5), Math.RandomLong(-5,1));
 		}
 		activeItem.m_bFireOnEmpty = false;
 	}	
@@ -90,58 +109,45 @@ namespace GearTalent
 	}
 }
 
-void WildShooterthink(CBasePlayer@ pPlayer) 
+void NextAttackThink(CBasePlayer@ pPlayer, float flPrimary = 0.1f, float flSecondary = 0.1f, float flTertiary = 0.1f) 
 {
 	CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
-	if(pPlayer !is null && pPlayer.IsConnected() && pCustom.GetKeyvalue(g_CustomPlayerRole).GetInteger() == Desperado) 
+	if(pPlayer !is null && pPlayer.IsConnected()) 
 	{
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
-		activeItem.m_flNextPrimaryAttack = 0.1f;
-		activeItem.m_flNextSecondaryAttack = 0.1f;
+		activeItem.m_flNextPrimaryAttack = flPrimary;
+		activeItem.m_flNextSecondaryAttack = flSecondary;
+		activeItem.m_flNextTertiaryttack = flTertiary;
 		
 		if(pCustom.GetKeyvalue(g_CustomCD).GetInteger() > 0)
 			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, pCustom.GetKeyvalue(g_CustomCD).GetInteger() - 1);
 	}
 }
 
-void BladeDancethink(CBasePlayer@ pPlayer) 
+void PunchangleThink(CBasePlayer@ pPlayer, int Punchx, int Punchy) 
 {
 	CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
-	if(pPlayer !is null && pPlayer.IsConnected() && pCustom.GetKeyvalue(g_CustomPlayerRole).GetInteger() == Berserker) 
+	if(pPlayer !is null && pPlayer.IsConnected()) 
 	{
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
-		activeItem.m_flNextPrimaryAttack = 0.1f;
-		
-		//g_PlayerFuncs.ClientPrint(pPlayer, HUD_PRINTNOTIFY, pCustom.GetKeyvalue(g_CustomCD).GetInteger());
+		pPlayer.pev.punchangle.x = Punchx;
+		pPlayer.pev.punchangle.y = Punchy;
 		
 		if(pCustom.GetKeyvalue(g_CustomCD).GetInteger() > 0)
 			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, pCustom.GetKeyvalue(g_CustomCD).GetInteger() - 1);
 	}
 }
 
-void ShotgunSlaughterthink(CBasePlayer@ pPlayer)
+
+void Ammothink(CBasePlayer@ pPlayer)
 {
 	CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
 	if(pPlayer !is null && pPlayer.IsConnected() && pCustom.GetKeyvalue(g_CustomPlayerRole).GetInteger() == Shotgunner) 
 	{
 		CBasePlayerWeapon@ activeItem = cast<CBasePlayerWeapon@>(pPlayer.m_hActiveItem.GetEntity());
-		activeItem.m_flNextPrimaryAttack = 0.1f;
-		activeItem.m_flNextSecondaryAttack = 0.1f;
 		
 		if(pCustom.GetKeyvalue(g_CustomCD).GetInteger() > 0)
 			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, pCustom.GetKeyvalue(g_CustomCD).GetInteger() - 1);
 	}
 }
 
-void NonStopthink(CBasePlayer@ pPlayer)
-{
-	CustomKeyvalues@ pCustom = pPlayer.GetCustomKeyvalues();
-	if(pPlayer !is null && pPlayer.IsConnected() && pCustom.GetKeyvalue(g_CustomPlayerRole).GetInteger() == LoneStar) 
-	{
-		pPlayer.pev.punchangle.x = 0;
-		pPlayer.pev.punchangle.y = 0;
-		
-		if(pCustom.GetKeyvalue(g_CustomCD).GetInteger() > 0)
-			g_EntityFuncs.DispatchKeyValue(pPlayer.edict(), g_CustomCD, pCustom.GetKeyvalue(g_CustomCD).GetInteger() - 1);
-	}
-}
