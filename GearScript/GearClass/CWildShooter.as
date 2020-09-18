@@ -1,4 +1,6 @@
-class CWildShooter : CBaseGear
+//由于As的限制
+//每个继承类必须自己写上Copy方法
+class CWildShooter : CBaseGear, IBaseGear
 {
     CWildShooter()
     {
@@ -7,6 +9,11 @@ class CWildShooter : CBaseGear
         dicCustomVal = {
             {"iCD", 5}
         }
+    }
+
+    CBaseGear@ Copy()
+    {
+        return CWildShooter();
     }
 
     HookReturnCode WeaponPrimaryAttack override ( CBasePlayer@ pPlayer, CBasePlayerWeapon@ pWeapon )

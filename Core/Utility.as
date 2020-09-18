@@ -109,4 +109,35 @@ namespace GearUtility
 		
 		return !pHit.IsAlive();
 	}
+
+	Vector atovec(string szTemp)
+	{
+		array<string> aryTemp = szTemp.Split(",");
+		if(aryTemp.length() >= 3)
+			return Vector(atof(aryTemp[0]), atof(aryTemp[1]), atof(aryTemp[2]));
+		return g_vecZero;
+	}
+
+	Vector2D atovec2(string szTemp)
+	{
+		array<string> aryTemp = szTemp.Split(",");
+		if(aryTemp.length() >= 2)
+			return Vector2D(atof(aryTemp[0]), atof(aryTemp[1]));
+		return Vector2D(0, 0);
+	}
+
+	array<int> atoaryi(string szTemp)
+	{
+		array<string> aryTemp = szTemp.Split(",");
+		array<int> aryOut = {};
+		for(uint i = 0;i < aryTemp.length(); i++)
+		{
+			aryOut.insertLast(atoi(aryTemp[i]));
+		}
+		return aryOut;
+	}
+	array<string> atoarysz(string szTemp)
+	{
+		return szTemp.Split(",");
+	}
 }

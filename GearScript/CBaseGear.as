@@ -1,3 +1,10 @@
+//由于As的限制
+//每个继承类必须自己写上Copy方法
+//使用接口来强制规定
+interface IBaseGear
+{
+    CBaseGear@ Copy();
+}
 abstract class CBaseGear
 {
     //用于标记分类
