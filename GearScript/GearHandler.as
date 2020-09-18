@@ -19,4 +19,17 @@ namespace GearHandler
 	{
 
 	}
+
+	void AddtoInventory(CBasePlayer@ pPlayer, string&in SlotType, float fHealth, float fArmor, float fGravity, float fMaxspeed, int iCritDamage, int iCritChance, int iHeadDamage)
+	{
+		
+
+	}
+
+	void AddtoPlayer(CBasePlayer@ pPlayer, string&in SlotType, float fHealth, float fArmor, float fGravity, float fMaxspeed, int iCritDamage, int iCritChance, int iHeadDamage)
+	{
+		CoreAttributes(pPlayer, fHealth, fArmor, fGravity, fMaxspeed);
+		AdditionalAttributes(pPlayer, iCritDamage, iCritChance, iHeadDamage);
+		TalentAttributes(pPlayer);
+	}
 }

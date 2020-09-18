@@ -20,6 +20,25 @@ void SlotMenuCallback(CTextMenu@ mMenu, CBasePlayer@ pPlayer, int iPage, const C
 {
 	if(mItem !is null && pPlayer !is null)
 	{
-		
+		if(mItem.m_szName == GearType::GearSlotType[0])
+		{
+			HelmetMenu.Open(0, 0, pPlayer);
+		}
+		if(mItem.m_szName == GearType::GearSlotType[1])
+		{
+			ArmorMenu.Open(0, 0, pPlayer);
+		}
+		if(mItem.m_szName == GearType::GearSlotType[2])
+		{
+			BackpackMenu.Open(0, 0, pPlayer);
+		}
+		if(mItem.m_szName == GearType::GearSlotType[3])
+		{
+			GloveMenu.Open(0, 0, pPlayer);
+		}
+		if(mItem.m_szName == GearType::GearSlotType[04])
+		{
+			HolsterMenu.Open(0, 0, pPlayer);
+		}
 	}
 }
