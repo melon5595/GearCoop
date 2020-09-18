@@ -140,4 +140,30 @@ namespace GearUtility
 	{
 		return szTemp.Split(",");
 	}
+	string vec22str(Vector vecSrc)
+	{
+		return vecSrc.x + "," + vecSrc.y + "," + vecSrc.z;
+	}
+	string vec22str(Vector2D vecSrc)
+	{
+		return vecSrc.x + "," + vecSrc.y;
+	}
+	string aryi2str(array<int> aryTemp)
+	{
+		string szTemp = "";
+		for(uint i = 0; i < aryTemp.length(); i++)
+		{
+			szTemp += string(aryTemp[i]);
+		}
+		return szTemp;
+	}
+	string arysz2str(array<string> aryTemp)
+	{
+		string szTemp = "";
+		for(uint i = 0; i < aryTemp.length(); i++)
+		{
+			szTemp += aryTemp[i];
+		}
+		return szTemp;
+	}
 }
